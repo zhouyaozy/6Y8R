@@ -1,5 +1,9 @@
 # This file is automatically added by @npmcli/template-oss. Do not edit.
 
+# 全局忽略所有依赖目录（必须放在最前面）
+**/node_modules/
+**/target/
+
 # ignore everything in the root
 /*
 
@@ -40,3 +44,18 @@
 !/test/
 !/tsconfig.json
 tap-testdir*/
+
+# 补充忽略所有包管理器锁文件和日志
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 补充忽略系统和IDE文件
+.DS_Store
+.idea/
+*.iml
+.vscode/

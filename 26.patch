@@ -1,0 +1,169 @@
+diff --git a/internal/constants.js b/internal/constants.js
+index 6d1db91..64d73e2 100644
+--- a/internal/constants.js
++++ b/internal/constants.js
+@@ -25,13 +25,55 @@ const RELEASE_TYPES = [
+   'prerelease',
+ ]
+ 
++// Pagination configuration for listing/display utilities.
++const PAGE_DEFAULT_SIZE = 5
++const PAGE_MIN_SIZE = 1
++const PAGE_MAX_SIZE = 50
++
++/**
++ * Return a paginated slice of the given items list along with metadata such
++ * as total pages and current page info. Used to support simple pagination in
++ * consumers that need to display a subset of a larger collection (e.g. the
++ * RELEASE_TYPES list).
++ *
++ * @param {Array} items The full list of items to paginate.
++ * @param {number} [page=1] The 1-based page number.
++ * @param {number} [size=PAGE_DEFAULT_SIZE] Items per page.
++ * @returns {{ items: Array, page: number, size: number, total: number, totalPages: number }}
++ */
++const paginate = (items, page = 1, size = PAGE_DEFAULT_SIZE) => {
++  const list = Array.isArray(items) ? items : []
++  const total = list.length
++
++  const parsedSize = Number.isFinite(size) ? Math.floor(size) : Number.NaN
++  const rawSize = Number.isFinite(parsedSize) && parsedSize > 0 ? parsedSize : PAGE_DEFAULT_SIZE
++  const safeSize = Math.min(Math.max(rawSize, PAGE_MIN_SIZE), PAGE_MAX_SIZE)
++  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
++  const totalPages = total === 0 ? 0 : Math.ceil(total / safeSize)
++
++  const start = (safePage - 1) * safeSize
++  const end = start + safeSize
++
++  return {
++    items: list.slice(start, end),
++    page: safePage,
++    size: safeSize,
++    total,
++    totalPages,
++  }
++}
++
+ module.exports = {
+   MAX_LENGTH,
+   MAX_SAFE_COMPONENT_LENGTH,
+   MAX_SAFE_BUILD_LENGTH,
+   MAX_SAFE_INTEGER,
++  PAGE_DEFAULT_SIZE,
++  PAGE_MAX_SIZE,
++  PAGE_MIN_SIZE,
+   RELEASE_TYPES,
+   SEMVER_SPEC_VERSION,
++  paginate,
+   FLAG_INCLUDE_PRERELEASE: 0b001,
+   FLAG_LOOSE: 0b010,
+ }
+diff --git a/internal/debug.js b/internal/debug.js
+index 20d1e9d..a8be6aa 100644
+--- a/internal/debug.js
++++ b/internal/debug.js
+@@ -1,5 +1,7 @@
+ 'use strict'
+ 
++const { paginate, PAGE_DEFAULT_SIZE } = require('./constants')
++
+ const debug = (
+   typeof process === 'object' &&
+   process.env &&
+@@ -8,4 +10,29 @@ const debug = (
+ ) ? (...args) => console.error('SEMVER', ...args)
+   : () => {}
+ 
++/**
++ * Emit debug logs that describe a pagination request and its resulting slice.
++ * Only emits output when NODE_DEBUG=semver is set, matching the existing
++ * debug guard. Returns the paginated result so callers can log-and-use in one
++ * expression.
++ *
++ * @param {string} label Label describing the source list (e.g. 'RELEASE_TYPES').
++ * @param {Array} items The list being paginated.
++ * @param {number} [page=1] 1-based page number.
++ * @param {number} [size=PAGE_DEFAULT_SIZE] Items per page.
++ * @returns {{ items: Array, page: number, size: number, total: number, totalPages: number }}
++ */
++debug.paginate = (label, items, page = 1, size = PAGE_DEFAULT_SIZE) => {
++  const result = paginate(items, page, size)
++  debug(
++    label,
++    'page=' + result.page,
++    'size=' + result.size,
++    'total=' + result.total,
++    'totalPages=' + result.totalPages,
++    'slice=[' + result.items.join(', ') + ']',
++  )
++  return result
++}
++
+ module.exports = debug
+diff --git a/test/internal/constants.js b/test/internal/constants.js
+index 99cc449..2240a15 100644
+--- a/test/internal/constants.js
++++ b/test/internal/constants.js
+@@ -9,4 +9,62 @@ t.match(constants, {
+   MAX_SAFE_INTEGER: Number,
+   RELEASE_TYPES: Array,
+   SEMVER_SPEC_VERSION: String,
++  PAGE_DEFAULT_SIZE: Number,
++  PAGE_MIN_SIZE: Number,
++  PAGE_MAX_SIZE: Number,
++  paginate: Function,
+ }, 'got appropriate data types exported')
++
++t.test('paginate default behaviour', t => {
++  const r = constants.paginate(constants.RELEASE_TYPES)
++  t.equal(r.page, 1, 'defaults to page 1')
++  t.equal(r.size, constants.PAGE_DEFAULT_SIZE, 'defaults size to PAGE_DEFAULT_SIZE')
++  t.equal(r.total, constants.RELEASE_TYPES.length, 'total matches input length')
++  t.equal(r.items.length, constants.PAGE_DEFAULT_SIZE, 'returns default-sized page')
++  t.equal(r.totalPages, Math.ceil(constants.RELEASE_TYPES.length / constants.PAGE_DEFAULT_SIZE), 'totalPages rounded up')
++  t.end()
++})
++
++t.test('paginate respects page and size arguments', t => {
++  const items = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
++  const page1 = constants.paginate(items, 1, 3)
++  const page2 = constants.paginate(items, 2, 3)
++  const page3 = constants.paginate(items, 3, 3)
++
++  t.same(page1.items, ['a', 'b', 'c'], 'page 1 items')
++  t.same(page2.items, ['d', 'e', 'f'], 'page 2 items')
++  t.same(page3.items, ['g'], 'last page items')
++  t.equal(page1.totalPages, 3, 'expected totalPages')
++  t.equal(page1.total, items.length, 'expected total')
++  t.end()
++})
++
++t.test('paginate clamps size within [PAGE_MIN_SIZE, PAGE_MAX_SIZE]', t => {
++  const items = Array.from({ length: 100 }, (_, i) => i)
++  const invalidNegative = constants.paginate(items, 1, -5)
++  const invalidZero = constants.paginate(items, 1, 0)
++  const tooLarge = constants.paginate(items, 1, 10000)
++  const justRight = constants.paginate(items, 1, 7)
++  t.equal(invalidNegative.size, constants.PAGE_DEFAULT_SIZE, 'negative size falls back to PAGE_DEFAULT_SIZE')
++  t.equal(invalidZero.size, constants.PAGE_DEFAULT_SIZE, 'zero size falls back to PAGE_DEFAULT_SIZE')
++  t.equal(tooLarge.size, constants.PAGE_MAX_SIZE, 'oversized size clamped to PAGE_MAX_SIZE')
++  t.equal(justRight.size, 7, 'valid size preserved')
++  t.end()
++})
++
++t.test('paginate handles empty list and out-of-range pages safely', t => {
++  const empty = constants.paginate([], 1, 5)
++  t.same(empty.items, [], 'empty list yields empty slice')
++  t.equal(empty.totalPages, 0, 'empty list yields zero totalPages')
++  const beyond = constants.paginate(['x'], 99, 5)
++  t.same(beyond.items, [], 'page beyond last yields empty slice')
++  t.equal(beyond.page, 99, 'page value preserved')
++  t.end()
++})
++
++t.test('paginate rejects non-array input gracefully', t => {
++  const bogus = constants.paginate('not-an-array', 1, 5)
++  t.same(bogus.items, [], 'non-array yields empty slice')
++  t.equal(bogus.total, 0, 'non-array total is 0')
++  t.end()
++})

@@ -1,6 +1,7 @@
 'use strict'
 
 const ANY = Symbol('SemVer ANY')
+
 // hoisted class for cyclic dependency
 class Comparator {
   static get ANY () {
@@ -13,9 +14,9 @@ class Comparator {
     if (comp instanceof Comparator) {
       if (comp.loose === !!options.loose) {
         return comp
-      } else {
-        comp = comp.value
       }
+
+      comp = comp.value
     }
 
     comp = comp.trim().split(/\s+/).join(' ')
@@ -34,7 +35,9 @@ class Comparator {
   }
 
   parse (comp) {
-    const r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
+    const r = this.options.loose
+      ? re[t.COMPARATORLOOSE]
+      : re[t.COMPARATOR]
     const m = comp.match(r)
 
     if (!m) {
@@ -85,50 +88,77 @@ class Comparator {
       if (this.value === '') {
         return true
       }
+
       return new Range(comp.value, options).test(this.value)
-    } else if (comp.operator === '') {
+    }
+
+    if (comp.operator === '') {
       if (comp.value === '') {
         return true
       }
+
       return new Range(this.value, options).test(comp.semver)
     }
 
     options = parseOptions(options)
 
     // Special cases where nothing can possibly be lower
-    if (options.includePrerelease &&
-      (this.value === '<0.0.0-0' || comp.value === '<0.0.0-0')) {
-      return false
-    }
-    if (!options.includePrerelease &&
-      (this.value.startsWith('<0.0.0') || comp.value.startsWith('<0.0.0'))) {
+    if (
+      options.includePrerelease &&
+      (this.value === '<0.0.0-0' || comp.value === '<0.0.0-0')
+    ) {
       return false
     }
 
-    // Same direction increasing (> or >=)
-    if (this.operator.startsWith('>') && comp.operator.startsWith('>')) {
-      return true
-    }
-    // Same direction decreasing (< or <=)
-    if (this.operator.startsWith('<') && comp.operator.startsWith('<')) {
-      return true
-    }
-    // same SemVer and both sides are inclusive (<= or >=)
     if (
-      (this.semver.version === comp.semver.version) &&
-      this.operator.includes('=') && comp.operator.includes('=')) {
+      !options.includePrerelease &&
+      (this.value.startsWith('<0.0.0') || comp.value.startsWith('<0.0.0'))
+    ) {
+      return false
+    }
+
+    const sameDirectionIncreasing =
+      this.operator.startsWith('>') && comp.operator.startsWith('>')
+    const sameDirectionDecreasing =
+      this.operator.startsWith('<') && comp.operator.startsWith('<')
+    const sameSemVerIncludingBounds =
+      this.semver.version === comp.semver.version &&
+      this.operator.includes('=') &&
+      comp.operator.includes('=')
+    const oppositeDirectionsLessThan =
+      cmp(this.semver, '<', comp.semver, options) &&
+      this.operator.startsWith('>') &&
+      comp.operator.startsWith('<')
+    const oppositeDirectionsGreaterThan =
+      cmp(this.semver, '>', comp.semver, options) &&
+      this.operator.startsWith('<') &&
+      comp.operator.startsWith('>')
+
+    // Same direction increasing (> or >=)
+    if (sameDirectionIncreasing) {
       return true
     }
+
+    // Same direction decreasing (< or <=)
+    if (sameDirectionDecreasing) {
+      return true
+    }
+
+    // same SemVer and both sides are inclusive (<= or >=)
+    if (sameSemVerIncludingBounds) {
+      return true
+    }
+
     // opposite directions less than
-    if (cmp(this.semver, '<', comp.semver, options) &&
-      this.operator.startsWith('>') && comp.operator.startsWith('<')) {
+    if (oppositeDirectionsLessThan) {
       return true
     }
+
     // opposite directions greater than
-    if (cmp(this.semver, '>', comp.semver, options) &&
-      this.operator.startsWith('<') && comp.operator.startsWith('>')) {
+    if (oppositeDirectionsGreaterThan) {
       return true
     }
+
     return false
   }
 }

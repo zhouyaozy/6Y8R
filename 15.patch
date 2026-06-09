@@ -1,0 +1,31 @@
+diff --git a/benchmarks/bench-compare.js b/benchmarks/bench-compare.js
+index ec75f2d..183b4c6 100644
+--- a/benchmarks/bench-compare.js
++++ b/benchmarks/bench-compare.js
+@@ -6,9 +6,9 @@ const suite = new Benchmark.Suite()
+ 
+ const comparisons = require('../test/fixtures/comparisons')
+ 
+-for (const [v0, v1] of comparisons) {
++for (const [v0, v1, loose] of comparisons) {
+   suite.add(`compare ${v0} to ${v1}`, function () {
+-    const semver = new SemVer(v0)
++    const semver = new SemVer(v0, loose)
+     semver.compare(v1)
+   })
+ }
+diff --git a/benchmarks/bench-diff.js b/benchmarks/bench-diff.js
+index c447fb3..81cc131 100644
+--- a/benchmarks/bench-diff.js
++++ b/benchmarks/bench-diff.js
+@@ -10,8 +10,8 @@ const cases = [
+   ['1.1.0', '1.1.0-pre', 'minor'],
+ ]
+ 
+-for (const [v1, v2] of cases) {
+-  suite.add(`diff(${v1}, ${v2})`, function () {
++for (const [v1, v2, expected] of cases) {
++  suite.add(`diff(${v1}, ${v2}) === ${expected}`, function () {
+     diff(v1, v2)
+   })
+ }

@@ -1,0 +1,57 @@
+diff --git a/test/internal/constants.js b/test/internal/constants.js
+index 99cc449..67a2a1f 100644
+--- a/test/internal/constants.js
++++ b/test/internal/constants.js
+@@ -3,10 +3,45 @@
+ const t = require('tap')
+ const constants = require('../../internal/constants')
+ 
+-t.match(constants, {
+-  MAX_LENGTH: Number,
+-  MAX_SAFE_COMPONENT_LENGTH: Number,
+-  MAX_SAFE_INTEGER: Number,
+-  RELEASE_TYPES: Array,
+-  SEMVER_SPEC_VERSION: String,
+-}, 'got appropriate data types exported')
++t.test('export shape and values', t => {
++  t.match(constants, {
++    MAX_LENGTH: Number,
++    MAX_SAFE_COMPONENT_LENGTH: Number,
++    MAX_SAFE_BUILD_LENGTH: Number,
++    MAX_SAFE_INTEGER: Number,
++    RELEASE_TYPES: Array,
++    SEMVER_SPEC_VERSION: String,
++    FLAG_INCLUDE_PRERELEASE: Number,
++    FLAG_LOOSE: Number,
++  }, 'got appropriate data types exported')
++
++  t.equal(constants.MAX_LENGTH, 256,
++    'MAX_LENGTH is 256 as per semver length safety')
++  t.equal(constants.MAX_SAFE_COMPONENT_LENGTH, 16,
++    'MAX_SAFE_COMPONENT_LENGTH is 16')
++  t.equal(constants.MAX_SAFE_BUILD_LENGTH, constants.MAX_LENGTH - 6,
++    'MAX_SAFE_BUILD_LENGTH equals MAX_LENGTH - 6')
++  t.equal(constants.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER,
++    'MAX_SAFE_INTEGER matches Number.MAX_SAFE_INTEGER')
++  t.equal(constants.SEMVER_SPEC_VERSION, '2.0.0',
++    'SEMVER_SPEC_VERSION is 2.0.0')
++  t.equal(constants.FLAG_INCLUDE_PRERELEASE, 0b001,
++    'FLAG_INCLUDE_PRERELEASE is 1 (0b001)')
++  t.equal(constants.FLAG_LOOSE, 0b010,
++    'FLAG_LOOSE is 2 (0b010)')
++  t.not(constants.FLAG_INCLUDE_PRERELEASE & constants.FLAG_LOOSE,
++    constants.FLAG_INCLUDE_PRERELEASE,
++    'FLAG_INCLUDE_PRERELEASE and FLAG_LOOSE are distinct bit flags')
++
++  t.same(constants.RELEASE_TYPES, [
++    'major',
++    'premajor',
++    'minor',
++    'preminor',
++    'patch',
++    'prepatch',
++    'prerelease',
++  ], 'RELEASE_TYPES has expected ordered list of release types')
++
++  t.end()
++})

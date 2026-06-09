@@ -13,6 +13,13 @@ test('invalid cmp usage', (t) => {
   t.end()
 })
 
+test('strict cmp handles nullish values', (t) => {
+  t.equal(cmp(null, '===', null), true)
+  t.equal(cmp(null, '===', '1.2.3'), false)
+  t.equal(cmp(undefined, '!==', null), true)
+  t.end()
+})
+
 test('comparison tests', t => {
   t.plan(comparisons.length)
   comparisons.forEach(([v0, v1, loose]) => t.test(`${v0} ${v1} ${loose}`, t => {
@@ -38,7 +45,6 @@ test('equality tests', t => {
     t.ok(!cmp(v0, '!=', v1, loose), `!cmp(${v0}!=${v1})`)
     t.ok(!cmp(v0, '===', v1, loose), `!cmp(${v0}===${v1})`)
 
-    // also test with an object. they are === because obj.version matches
     t.ok(cmp(new SemVer(v0, { loose: loose }), '===',
       new SemVer(v1, { loose: loose })),
     `!cmp(${v0}===${v1}) object`)

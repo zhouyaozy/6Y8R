@@ -1,0 +1,104 @@
+diff --git a/functions/clean.js b/functions/clean.js
+index 79703d6..714ff41 100644
+--- a/functions/clean.js
++++ b/functions/clean.js
+@@ -2,7 +2,9 @@
+ 
+ const parse = require('./parse')
+ const clean = (version, options) => {
+-  const s = parse(version.trim().replace(/^[=v]+/, ''), options)
++  const s = parse(typeof version === 'string'
++    ? version.trim().replace(/^[=v]+/, '')
++    : version, options)
+   return s ? s.version : null
+ }
+ module.exports = clean
+diff --git a/functions/cmp.js b/functions/cmp.js
+index 77487dc..97c03b4 100644
+--- a/functions/cmp.js
++++ b/functions/cmp.js
+@@ -7,25 +7,16 @@ const gte = require('./gte')
+ const lt = require('./lt')
+ const lte = require('./lte')
+ 
++const unwrapVersion = (version) =>
++  version && typeof version === 'object' ? version.version : version
++
+ const cmp = (a, op, b, loose) => {
+   switch (op) {
+     case '===':
+-      if (typeof a === 'object') {
+-        a = a.version
+-      }
+-      if (typeof b === 'object') {
+-        b = b.version
+-      }
+-      return a === b
++      return unwrapVersion(a) === unwrapVersion(b)
+ 
+     case '!==':
+-      if (typeof a === 'object') {
+-        a = a.version
+-      }
+-      if (typeof b === 'object') {
+-        b = b.version
+-      }
+-      return a !== b
++      return unwrapVersion(a) !== unwrapVersion(b)
+ 
+     case '':
+     case '=':
+diff --git a/test/functions/clean.js b/test/functions/clean.js
+index d32c0e0..1158064 100644
+--- a/test/functions/clean.js
++++ b/test/functions/clean.js
+@@ -2,10 +2,9 @@
+ 
+ const { test } = require('tap')
+ const clean = require('../../functions/clean')
++const SemVer = require('../../classes/semver')
+ 
+ test('clean tests', (t) => {
+-  // [range, version]
+-  // Version should be detectable despite extra characters
+   [
+     ['1.2.3', '1.2.3'],
+     [' 1.2.3 ', '1.2.3'],
+@@ -26,3 +25,11 @@ test('clean tests', (t) => {
+   })
+   t.end()
+ })
++
++test('clean handles non-string inputs safely', (t) => {
++  t.equal(clean(null), null)
++  t.equal(clean(undefined), null)
++  t.equal(clean(12345), null)
++  t.equal(clean(new SemVer('1.2.3')), '1.2.3')
++  t.end()
++})
+diff --git a/test/functions/cmp.js b/test/functions/cmp.js
+index be58ad5..5b47e32 100644
+--- a/test/functions/cmp.js
++++ b/test/functions/cmp.js
+@@ -13,6 +13,13 @@ test('invalid cmp usage', (t) => {
+   t.end()
+ })
+ 
++test('strict cmp handles nullish values', (t) => {
++  t.equal(cmp(null, '===', null), true)
++  t.equal(cmp(null, '===', '1.2.3'), false)
++  t.equal(cmp(undefined, '!==', null), true)
++  t.end()
++})
++
+ test('comparison tests', t => {
+   t.plan(comparisons.length)
+   comparisons.forEach(([v0, v1, loose]) => t.test(`${v0} ${v1} ${loose}`, t => {
+@@ -38,7 +45,6 @@ test('equality tests', t => {
+     t.ok(!cmp(v0, '!=', v1, loose), `!cmp(${v0}!=${v1})`)
+     t.ok(!cmp(v0, '===', v1, loose), `!cmp(${v0}===${v1})`)
+ 
+-    // also test with an object. they are === because obj.version matches
+     t.ok(cmp(new SemVer(v0, { loose: loose }), '===',
+       new SemVer(v1, { loose: loose })),
+     `!cmp(${v0}===${v1}) object`)

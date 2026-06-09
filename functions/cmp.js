@@ -7,25 +7,16 @@ const gte = require('./gte')
 const lt = require('./lt')
 const lte = require('./lte')
 
+const unwrapVersion = (version) =>
+  version && typeof version === 'object' ? version.version : version
+
 const cmp = (a, op, b, loose) => {
   switch (op) {
     case '===':
-      if (typeof a === 'object') {
-        a = a.version
-      }
-      if (typeof b === 'object') {
-        b = b.version
-      }
-      return a === b
+      return unwrapVersion(a) === unwrapVersion(b)
 
     case '!==':
-      if (typeof a === 'object') {
-        a = a.version
-      }
-      if (typeof b === 'object') {
-        b = b.version
-      }
-      return a !== b
+      return unwrapVersion(a) !== unwrapVersion(b)
 
     case '':
     case '=':

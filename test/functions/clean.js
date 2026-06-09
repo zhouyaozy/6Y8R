@@ -2,10 +2,9 @@
 
 const { test } = require('tap')
 const clean = require('../../functions/clean')
+const SemVer = require('../../classes/semver')
 
 test('clean tests', (t) => {
-  // [range, version]
-  // Version should be detectable despite extra characters
   [
     ['1.2.3', '1.2.3'],
     [' 1.2.3 ', '1.2.3'],
@@ -24,5 +23,13 @@ test('clean tests', (t) => {
     const msg = `clean(${range}) = ${version}`
     t.equal(clean(range), version, msg)
   })
+  t.end()
+})
+
+test('clean handles non-string inputs safely', (t) => {
+  t.equal(clean(null), null)
+  t.equal(clean(undefined), null)
+  t.equal(clean(12345), null)
+  t.equal(clean(new SemVer('1.2.3')), '1.2.3')
   t.end()
 })

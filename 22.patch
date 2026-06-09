@@ -1,0 +1,113 @@
+diff --git a/test/internal/constants.js b/test/internal/constants.js
+index 99cc449..0d09d72 100644
+--- a/test/internal/constants.js
++++ b/test/internal/constants.js
+@@ -3,10 +3,24 @@
+ const t = require('tap')
+ const constants = require('../../internal/constants')
+ 
+-t.match(constants, {
+-  MAX_LENGTH: Number,
+-  MAX_SAFE_COMPONENT_LENGTH: Number,
+-  MAX_SAFE_INTEGER: Number,
+-  RELEASE_TYPES: Array,
+-  SEMVER_SPEC_VERSION: String,
+-}, 'got appropriate data types exported')
++t.test('exports expected constants and values', t => {
++  t.strictSame(constants, {
++    MAX_LENGTH: 256,
++    MAX_SAFE_COMPONENT_LENGTH: 16,
++    MAX_SAFE_BUILD_LENGTH: 250,
++    MAX_SAFE_INTEGER: Number.MAX_SAFE_INTEGER || 9007199254740991,
++    RELEASE_TYPES: [
++      'major',
++      'premajor',
++      'minor',
++      'preminor',
++      'patch',
++      'prepatch',
++      'prerelease',
++    ],
++    SEMVER_SPEC_VERSION: '2.0.0',
++    FLAG_INCLUDE_PRERELEASE: 0b001,
++    FLAG_LOOSE: 0b010,
++  })
++  t.end()
++})
+diff --git a/test/internal/debug.js b/test/internal/debug.js
+index 99d6085..0044313 100644
+--- a/test/internal/debug.js
++++ b/test/internal/debug.js
+@@ -1,38 +1,44 @@
+ 'use strict'
+ 
+-const main = () => {
+-  const t = require('tap')
+-  const { spawn } = require('child_process')
+-  t.plan(2)
+-  t.test('without env set', t => {
+-    const c = spawn(process.execPath, [__filename, 'child'], { env: {
++const { spawn } = require('child_process')
++const t = require('tap')
++
++const runChild = (NODE_DEBUG) => new Promise((resolve, reject) => {
++  const child = spawn(process.execPath, [__filename, 'child'], {
++    env: {
+       ...process.env,
+-      NODE_DEBUG: '',
+-    } })
+-    const err = []
+-    c.stderr.on('data', chunk => err.push(chunk))
+-    c.on('close', (code, signal) => {
+-      t.equal(code, 0, 'success exit status')
+-      t.equal(signal, null, 'no signal')
+-      t.equal(Buffer.concat(err).toString('utf8'), '', 'got no output')
+-      t.end()
++      NODE_DEBUG,
++    },
++  })
++  const err = []
++
++  child.stderr.on('data', chunk => err.push(chunk))
++  child.on('error', reject)
++  child.on('close', (code, signal) => resolve({
++    code,
++    signal,
++    stderr: Buffer.concat(err).toString('utf8'),
++  }))
++})
++
++const main = async () => {
++  await t.test('without semver in NODE_DEBUG', async t => {
++    const result = await runChild('notsemver,http')
++    t.strictSame(result, {
++      code: 0,
++      signal: null,
++      stderr: '',
+     })
+   })
+-  t.test('with env set', t => {
+-    const c = spawn(process.execPath, [__filename, 'child'], { env: {
+-      ...process.env,
+-      NODE_DEBUG: 'semver',
+-    } })
+-    const err = []
+-    c.stderr.on('data', chunk => err.push(chunk))
+-    c.on('close', (code, signal) => {
+-      t.equal(code, 0, 'success exit status')
+-      t.equal(signal, null, 'no signal')
+-      t.equal(Buffer.concat(err).toString('utf8'), 'SEMVER hello, world\n', 'got expected output')
+-      t.end()
++
++  await t.test('with semver in NODE_DEBUG', async t => {
++    const result = await runChild('http,SemVer,fs')
++    t.strictSame(result, {
++      code: 0,
++      signal: null,
++      stderr: 'SEMVER hello, world\n',
+     })
+   })
+-  t.end()
+ }
+ 
+ if (process.argv[2] === 'child') {

@@ -3,7 +3,7 @@
 const main = () => {
   const t = require('tap')
   const { spawn } = require('child_process')
-  t.plan(2)
+  t.plan(5)
   t.test('without env set', t => {
     const c = spawn(process.execPath, [__filename, 'child'], { env: {
       ...process.env,
@@ -29,6 +29,48 @@ const main = () => {
       t.equal(code, 0, 'success exit status')
       t.equal(signal, null, 'no signal')
       t.equal(Buffer.concat(err).toString('utf8'), 'SEMVER hello, world\n', 'got expected output')
+      t.end()
+    })
+  })
+  t.test('with unrelated env value', t => {
+    const c = spawn(process.execPath, [__filename, 'child'], { env: {
+      ...process.env,
+      NODE_DEBUG: 'http',
+    } })
+    const err = []
+    c.stderr.on('data', chunk => err.push(chunk))
+    c.on('close', (code, signal) => {
+      t.equal(code, 0, 'success exit status')
+      t.equal(signal, null, 'no signal')
+      t.equal(Buffer.concat(err).toString('utf8'), '', 'got no output for unrelated NODE_DEBUG')
+      t.end()
+    })
+  })
+  t.test('with case-insensitive env value', t => {
+    const c = spawn(process.execPath, [__filename, 'child'], { env: {
+      ...process.env,
+      NODE_DEBUG: 'SEMVER',
+    } })
+    const err = []
+    c.stderr.on('data', chunk => err.push(chunk))
+    c.on('close', (code, signal) => {
+      t.equal(code, 0, 'success exit status')
+      t.equal(signal, null, 'no signal')
+      t.equal(Buffer.concat(err).toString('utf8'), 'SEMVER hello, world\n', 'matches case-insensitively')
+      t.end()
+    })
+  })
+  t.test('with partial word match does not trigger', t => {
+    const c = spawn(process.execPath, [__filename, 'child'], { env: {
+      ...process.env,
+      NODE_DEBUG: 'semverx',
+    } })
+    const err = []
+    c.stderr.on('data', chunk => err.push(chunk))
+    c.on('close', (code, signal) => {
+      t.equal(code, 0, 'success exit status')
+      t.equal(signal, null, 'no signal')
+      t.equal(Buffer.concat(err).toString('utf8'), '', 'partial word match does not trigger debug')
       t.end()
     })
   })

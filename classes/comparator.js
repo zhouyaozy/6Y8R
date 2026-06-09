@@ -1,7 +1,13 @@
 'use strict'
 
 const ANY = Symbol('SemVer ANY')
-// hoisted class for cyclic dependency
+
+const parseOptions = require('../internal/parse-options')
+const { safeRe: re, t } = require('../internal/re')
+const cmp = require('../functions/cmp')
+const debug = require('../internal/debug')
+const classes = require('./index.js')
+
 class Comparator {
   static get ANY () {
     return ANY
@@ -50,7 +56,7 @@ class Comparator {
     if (!m[2]) {
       this.semver = ANY
     } else {
-      this.semver = new SemVer(m[2], this.options.loose)
+      this.semver = new classes.SemVer(m[2], this.options.loose)
     }
   }
 
@@ -67,7 +73,7 @@ class Comparator {
 
     if (typeof version === 'string') {
       try {
-        version = new SemVer(version, this.options)
+        version = new classes.SemVer(version, this.options)
       } catch (er) {
         return false
       }
@@ -85,12 +91,12 @@ class Comparator {
       if (this.value === '') {
         return true
       }
-      return new Range(comp.value, options).test(this.value)
+      return new classes.Range(comp.value, options).test(this.value)
     } else if (comp.operator === '') {
       if (comp.value === '') {
         return true
       }
-      return new Range(this.value, options).test(comp.semver)
+      return new classes.Range(this.value, options).test(comp.semver)
     }
 
     options = parseOptions(options)
@@ -134,10 +140,3 @@ class Comparator {
 }
 
 module.exports = Comparator
-
-const parseOptions = require('../internal/parse-options')
-const { safeRe: re, t } = require('../internal/re')
-const cmp = require('../functions/cmp')
-const debug = require('../internal/debug')
-const SemVer = require('./semver')
-const Range = require('./range')

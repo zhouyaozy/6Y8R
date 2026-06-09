@@ -6,9 +6,11 @@ const suite = new Benchmark.Suite()
 
 const comparisons = require('../test/fixtures/comparisons')
 
-for (const [v0, v1] of comparisons) {
-  suite.add(`compare ${v0} to ${v1}`, function () {
-    const semver = new SemVer(v0)
+for (const [v0, v1, options] of comparisons) {
+  const optionsLabel = options === undefined ? '' : `, ${JSON.stringify(options)}`
+
+  suite.add(`compare ${v0} to ${v1}${optionsLabel}`, function () {
+    const semver = new SemVer(v0, options)
     semver.compare(v1)
   })
 }

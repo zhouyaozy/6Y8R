@@ -10,8 +10,14 @@ const cases = [
   ['1.1.0', '1.1.0-pre', 'minor'],
 ]
 
-for (const [v1, v2] of cases) {
-  suite.add(`diff(${v1}, ${v2})`, function () {
+for (const [v1, v2, expected] of cases) {
+  const result = diff(v1, v2)
+
+  if (result !== expected) {
+    throw new Error(`Expected diff(${v1}, ${v2}) to be ${expected}, got ${result}`)
+  }
+
+  suite.add(`diff(${v1}, ${v2}) -> ${expected}`, function () {
     diff(v1, v2)
   })
 }

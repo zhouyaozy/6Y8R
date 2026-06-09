@@ -1,0 +1,69 @@
+diff --git a/functions/clean.js b/functions/clean.js
+index 79703d6..bc2d9be 100644
+--- a/functions/clean.js
++++ b/functions/clean.js
+@@ -2,7 +2,10 @@
+ 
+ const parse = require('./parse')
+ const clean = (version, options) => {
+-  const s = parse(version.trim().replace(/^[=v]+/, ''), options)
++  const v = typeof version === 'string'
++    ? version.trim().replace(/^[=v]+/, '')
++    : version
++  const s = parse(v, options)
+   return s ? s.version : null
+ }
+ module.exports = clean
+diff --git a/test/functions/clean.js b/test/functions/clean.js
+index d32c0e0..aa10adf 100644
+--- a/test/functions/clean.js
++++ b/test/functions/clean.js
+@@ -2,10 +2,9 @@
+ 
+ const { test } = require('tap')
+ const clean = require('../../functions/clean')
++const SemVer = require('../../classes/semver')
+ 
+ test('clean tests', (t) => {
+-  // [range, version]
+-  // Version should be detectable despite extra characters
+   [
+     ['1.2.3', '1.2.3'],
+     [' 1.2.3 ', '1.2.3'],
+@@ -26,3 +25,35 @@ test('clean tests', (t) => {
+   })
+   t.end()
+ })
++
++test('clean with loose option', (t) => {
++  t.equal(clean('  =v1.2.3   ', { loose: true }), '1.2.3',
++    'loose mode should work like strict')
++  t.equal(clean('1.2.3-rc.1+build.123', { loose: true }), '1.2.3-rc.1',
++    'loose mode strips build metadata')
++  t.end()
++})
++
++test('clean includes build metadata when includePrerelease option is set', (t) => {
++  t.equal(clean('1.2.3+build.123', { includePrerelease: true }), '1.2.3',
++    'includePrerelease does not affect version output')
++  t.end()
++})
++
++test('clean edge cases', (t) => {
++  t.equal(clean(''), null, 'empty string returns null')
++  t.equal(clean('   '), null, 'whitespace only returns null')
++  t.equal(clean('=v'), null, 'prefix-only string returns null')
++  t.equal(clean('^1.2.3'), null, 'caret range returns null')
++  t.equal(clean('invalid'), null, 'garbage string returns null')
++  t.end()
++})
++
++test('clean with SemVer object', (t) => {
++  const sv = new SemVer('1.2.3')
++  t.equal(clean(sv), '1.2.3', 'SemVer object returns its version')
++
++  const svPre = new SemVer('2.0.0-rc.1')
++  t.equal(clean(svPre), '2.0.0-rc.1', 'SemVer object with prerelease returns its version')
++  t.end()
++})
+\ No newline at end of file

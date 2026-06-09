@@ -1,10 +1,12 @@
 'use strict'
 
-const ANY = Symbol('SemVer ANY')
+const COMPARATOR_ANY = Symbol('SemVer ANY')
+const SPACE_CHARACTERS = /\s+/g
+
 // hoisted class for cyclic dependency
 class Comparator {
   static get ANY () {
-    return ANY
+    return COMPARATOR_ANY
   }
 
   constructor (comp, options) {
@@ -13,28 +15,27 @@ class Comparator {
     if (comp instanceof Comparator) {
       if (comp.loose === !!options.loose) {
         return comp
-      } else {
-        comp = comp.value
       }
+      comp = comp.value
     }
 
-    comp = comp.trim().split(/\s+/).join(' ')
+    comp = comp.trim().replace(SPACE_CHARACTERS, ' ')
     debug('comparator', comp, options)
     this.options = options
     this.loose = !!options.loose
     this.parse(comp)
 
-    if (this.semver === ANY) {
-      this.value = ''
-    } else {
-      this.value = this.operator + this.semver.version
-    }
+    this.value = this.semver === COMPARATOR_ANY
+      ? ''
+      : this.operator + this.semver.version
 
     debug('comp', this)
   }
 
   parse (comp) {
-    const r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
+    const r = this.options.loose
+      ? re[t.COMPARATORLOOSE]
+      : re[t.COMPARATOR]
     const m = comp.match(r)
 
     if (!m) {
@@ -48,7 +49,7 @@ class Comparator {
 
     // if it literally is just '>' or '' then allow anything.
     if (!m[2]) {
-      this.semver = ANY
+      this.semver = COMPARATOR_ANY
     } else {
       this.semver = new SemVer(m[2], this.options.loose)
     }
@@ -61,7 +62,7 @@ class Comparator {
   test (version) {
     debug('Comparator.test', version, this.options.loose)
 
-    if (this.semver === ANY || version === ANY) {
+    if (this.semver === COMPARATOR_ANY || version === COMPARATOR_ANY) {
       return true
     }
 
@@ -81,54 +82,60 @@ class Comparator {
       throw new TypeError('a Comparator is required')
     }
 
+    // A comparator with no operator is just a single SemVer — cross-check with
+    // the other side as a range.
     if (this.operator === '') {
-      if (this.value === '') {
-        return true
-      }
-      return new Range(comp.value, options).test(this.value)
-    } else if (comp.operator === '') {
-      if (comp.value === '') {
-        return true
-      }
-      return new Range(this.value, options).test(comp.semver)
+      return this.value === '' || new Range(comp.value, options).test(this.value)
+    }
+
+    if (comp.operator === '') {
+      return comp.value === '' || new Range(this.value, options).test(comp.semver)
     }
 
     options = parseOptions(options)
 
     // Special cases where nothing can possibly be lower
-    if (options.includePrerelease &&
-      (this.value === '<0.0.0-0' || comp.value === '<0.0.0-0')) {
-      return false
-    }
-    if (!options.includePrerelease &&
-      (this.value.startsWith('<0.0.0') || comp.value.startsWith('<0.0.0'))) {
-      return false
+    if (options.includePrerelease) {
+      if (this.value === '<0.0.0-0' || comp.value === '<0.0.0-0') {
+        return false
+      }
+    } else {
+      if (this.value.startsWith('<0.0.0') || comp.value.startsWith('<0.0.0')) {
+        return false
+      }
     }
 
     // Same direction increasing (> or >=)
     if (this.operator.startsWith('>') && comp.operator.startsWith('>')) {
       return true
     }
+
     // Same direction decreasing (< or <=)
     if (this.operator.startsWith('<') && comp.operator.startsWith('<')) {
       return true
     }
+
     // same SemVer and both sides are inclusive (<= or >=)
     if (
-      (this.semver.version === comp.semver.version) &&
-      this.operator.includes('=') && comp.operator.includes('=')) {
+      this.semver.version === comp.semver.version &&
+      this.operator.includes('=') &&
+      comp.operator.includes('=')
+    ) {
       return true
     }
-    // opposite directions less than
+
+    // opposite directions: this opens lower, comp opens higher
     if (cmp(this.semver, '<', comp.semver, options) &&
       this.operator.startsWith('>') && comp.operator.startsWith('<')) {
       return true
     }
-    // opposite directions greater than
+
+    // opposite directions: this opens higher, comp opens lower
     if (cmp(this.semver, '>', comp.semver, options) &&
       this.operator.startsWith('<') && comp.operator.startsWith('>')) {
       return true
     }
+
     return false
   }
 }

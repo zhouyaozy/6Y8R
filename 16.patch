@@ -1,0 +1,40 @@
+diff --git a/functions/clean.js b/functions/clean.js
+index 79703d6..b2a9d8a 100644
+--- a/functions/clean.js
++++ b/functions/clean.js
+@@ -2,7 +2,17 @@
+ 
+ const parse = require('./parse')
+ const clean = (version, options) => {
+-  const s = parse(version.trim().replace(/^[=v]+/, ''), options)
++  if (version == null) {
++    return null
++  }
++  if (typeof version !== 'string') {
++    return null
++  }
++  const trimmed = version.trim().replace(/^[=v]+/, '')
++  if (trimmed === '') {
++    return null
++  }
++  const s = parse(trimmed, options)
+   return s ? s.version : null
+ }
+ module.exports = clean
+diff --git a/functions/cmp.js b/functions/cmp.js
+index 77487dc..a00af13 100644
+--- a/functions/cmp.js
++++ b/functions/cmp.js
+@@ -8,6 +8,12 @@ const lt = require('./lt')
+ const lte = require('./lte')
+ 
+ const cmp = (a, op, b, loose) => {
++  if (a == null || b == null) {
++    return false
++  }
++  if (typeof op !== 'string') {
++    throw new TypeError(`Invalid operator: ${op}`)
++  }
+   switch (op) {
+     case '===':
+       if (typeof a === 'object') {

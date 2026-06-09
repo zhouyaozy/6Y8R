@@ -8,6 +8,12 @@ const lt = require('./lt')
 const lte = require('./lte')
 
 const cmp = (a, op, b, loose) => {
+  if (a == null || b == null) {
+    return false
+  }
+  if (typeof op !== 'string') {
+    throw new TypeError(`Invalid operator: ${op}`)
+  }
   switch (op) {
     case '===':
       if (typeof a === 'object') {

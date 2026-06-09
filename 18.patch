@@ -1,0 +1,80 @@
+diff --git a/functions/clean.js b/functions/clean.js
+index 79703d6..1053828 100644
+--- a/functions/clean.js
++++ b/functions/clean.js
+@@ -2,7 +2,7 @@
+ 
+ const parse = require('./parse')
+ const clean = (version, options) => {
+-  const s = parse(version.trim().replace(/^[=v]+/, ''), options)
++  const s = parse(typeof version === 'string' ? version.trim().replace(/^[=v]+/, '') : version, options)
+   return s ? s.version : null
+ }
+ module.exports = clean
+diff --git a/functions/cmp.js b/functions/cmp.js
+index 77487dc..d6a01b6 100644
+--- a/functions/cmp.js
++++ b/functions/cmp.js
+@@ -11,19 +11,19 @@ const cmp = (a, op, b, loose) => {
+   switch (op) {
+     case '===':
+       if (typeof a === 'object') {
+-        a = a.version
++        a = a && typeof a.version === 'string' ? a.version : a
+       }
+       if (typeof b === 'object') {
+-        b = b.version
++        b = b && typeof b.version === 'string' ? b.version : b
+       }
+       return a === b
+ 
+     case '!==':
+       if (typeof a === 'object') {
+-        a = a.version
++        a = a && typeof a.version === 'string' ? a.version : a
+       }
+       if (typeof b === 'object') {
+-        b = b.version
++        b = b && typeof b.version === 'string' ? b.version : b
+       }
+       return a !== b
+ 
+diff --git a/test/functions/clean.js b/test/functions/clean.js
+index d32c0e0..62a57e2 100644
+--- a/test/functions/clean.js
++++ b/test/functions/clean.js
+@@ -24,5 +24,14 @@ test('clean tests', (t) => {
+     const msg = `clean(${range}) = ${version}`
+     t.equal(clean(range), version, msg)
+   })
++
++  // Test edge cases
++  t.equal(clean(123), null, 'returns null for number')
++  t.equal(clean(null), null, 'returns null for null')
++  t.equal(clean(undefined), null, 'returns null for undefined')
++
++  const SemVer = require('../../classes/semver')
++  t.equal(clean(new SemVer('1.2.3')), '1.2.3', 'returns version for SemVer object')
++
+   t.end()
+ })
+diff --git a/test/functions/cmp.js b/test/functions/cmp.js
+index be58ad5..4ab1045 100644
+--- a/test/functions/cmp.js
++++ b/test/functions/cmp.js
+@@ -49,3 +49,15 @@ test('equality tests', t => {
+       `cmp(${v0}!==${v1}) object`)
+   }))
+ })
++
++test('cmp null and non-string', t => {
++  t.equal(cmp(null, '===', null), true, 'null === null')
++  t.equal(cmp(null, '!==', null), false, 'null !== null')
++  t.equal(cmp(new SemVer('1.2.3'), '===', '1.2.3'), true, 'SemVer === string')
++  t.equal(cmp('1.2.3', '===', new SemVer('1.2.3')), true, 'string === SemVer')
++  t.equal(cmp(new SemVer('1.2.3'), '!==', '1.2.3'), false, 'SemVer !== string')
++  t.equal(cmp('1.2.3', '!==', new SemVer('1.2.3')), false, 'string !== SemVer')
++  t.equal(cmp([1], '===', [1]), false, 'array === array')
++  t.equal(cmp([1], '!==', [1]), true, 'array !== array')
++  t.end()
++})

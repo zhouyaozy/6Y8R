@@ -11,19 +11,19 @@ const cmp = (a, op, b, loose) => {
   switch (op) {
     case '===':
       if (typeof a === 'object') {
-        a = a.version
+        a = a && typeof a.version === 'string' ? a.version : a
       }
       if (typeof b === 'object') {
-        b = b.version
+        b = b && typeof b.version === 'string' ? b.version : b
       }
       return a === b
 
     case '!==':
       if (typeof a === 'object') {
-        a = a.version
+        a = a && typeof a.version === 'string' ? a.version : a
       }
       if (typeof b === 'object') {
-        b = b.version
+        b = b && typeof b.version === 'string' ? b.version : b
       }
       return a !== b
 

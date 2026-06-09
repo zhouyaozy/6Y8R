@@ -24,5 +24,14 @@ test('clean tests', (t) => {
     const msg = `clean(${range}) = ${version}`
     t.equal(clean(range), version, msg)
   })
+
+  // Test edge cases
+  t.equal(clean(123), null, 'returns null for number')
+  t.equal(clean(null), null, 'returns null for null')
+  t.equal(clean(undefined), null, 'returns null for undefined')
+
+  const SemVer = require('../../classes/semver')
+  t.equal(clean(new SemVer('1.2.3')), '1.2.3', 'returns version for SemVer object')
+
   t.end()
 })

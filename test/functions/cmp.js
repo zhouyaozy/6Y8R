@@ -49,3 +49,15 @@ test('equality tests', t => {
       `cmp(${v0}!==${v1}) object`)
   }))
 })
+
+test('cmp null and non-string', t => {
+  t.equal(cmp(null, '===', null), true, 'null === null')
+  t.equal(cmp(null, '!==', null), false, 'null !== null')
+  t.equal(cmp(new SemVer('1.2.3'), '===', '1.2.3'), true, 'SemVer === string')
+  t.equal(cmp('1.2.3', '===', new SemVer('1.2.3')), true, 'string === SemVer')
+  t.equal(cmp(new SemVer('1.2.3'), '!==', '1.2.3'), false, 'SemVer !== string')
+  t.equal(cmp('1.2.3', '!==', new SemVer('1.2.3')), false, 'string !== SemVer')
+  t.equal(cmp([1], '===', [1]), false, 'array === array')
+  t.equal(cmp([1], '!==', [1]), true, 'array !== array')
+  t.end()
+})

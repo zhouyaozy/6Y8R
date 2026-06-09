@@ -1,0 +1,16 @@
+diff --git a/benchmarks/bench-compare.js b/benchmarks/bench-compare.js
+index ec75f2d..28e7c56 100644
+--- a/benchmarks/bench-compare.js
++++ b/benchmarks/bench-compare.js
+@@ -6,9 +6,9 @@ const suite = new Benchmark.Suite()
+ 
+ const comparisons = require('../test/fixtures/comparisons')
+ 
+-for (const [v0, v1] of comparisons) {
++for (const [v0, v1, options] of comparisons) {
+   suite.add(`compare ${v0} to ${v1}`, function () {
+-    const semver = new SemVer(v0)
++    const semver = new SemVer(v0, options)
+     semver.compare(v1)
+   })
+ }

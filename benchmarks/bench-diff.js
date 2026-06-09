@@ -11,6 +11,9 @@ const cases = [
 ]
 
 for (const [v1, v2] of cases) {
+  if (typeof v1 !== 'string' || typeof v2 !== 'string') {
+    continue
+  }
   suite.add(`diff(${v1}, ${v2})`, function () {
     diff(v1, v2)
   })
@@ -19,5 +22,8 @@ for (const [v1, v2] of cases) {
 suite
   .on('cycle', function (event) {
     console.log(String(event.target))
+  })
+  .on('error', function (event) {
+    console.error(String(event.target.error))
   })
   .run({ async: false })

@@ -1,0 +1,44 @@
+diff --git a/benchmarks/bench-compare.js b/benchmarks/bench-compare.js
+index ec75f2d..ce87bfe 100644
+--- a/benchmarks/bench-compare.js
++++ b/benchmarks/bench-compare.js
+@@ -7,6 +7,9 @@ const suite = new Benchmark.Suite()
+ const comparisons = require('../test/fixtures/comparisons')
+ 
+ for (const [v0, v1] of comparisons) {
++  if (typeof v0 !== 'string' || typeof v1 !== 'string') {
++    continue
++  }
+   suite.add(`compare ${v0} to ${v1}`, function () {
+     const semver = new SemVer(v0)
+     semver.compare(v1)
+@@ -17,4 +20,7 @@ suite
+   .on('cycle', function (event) {
+     console.log(String(event.target))
+   })
++  .on('error', function (event) {
++    console.error(String(event.target.error))
++  })
+   .run({ async: false })
+diff --git a/benchmarks/bench-diff.js b/benchmarks/bench-diff.js
+index c447fb3..c3c266f 100644
+--- a/benchmarks/bench-diff.js
++++ b/benchmarks/bench-diff.js
+@@ -11,6 +11,9 @@ const cases = [
+ ]
+ 
+ for (const [v1, v2] of cases) {
++  if (typeof v1 !== 'string' || typeof v2 !== 'string') {
++    continue
++  }
+   suite.add(`diff(${v1}, ${v2})`, function () {
+     diff(v1, v2)
+   })
+@@ -20,4 +23,7 @@ suite
+   .on('cycle', function (event) {
+     console.log(String(event.target))
+   })
++  .on('error', function (event) {
++    console.error(String(event.target.error))
++  })
+   .run({ async: false })

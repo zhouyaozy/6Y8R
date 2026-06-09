@@ -1,4 +1,4 @@
-'use strict'111
+'use strict'
 
 const COMPARATOR_ANY = Symbol('SemVer ANY')
 const SPACE_CHARACTERS = /\s+/g

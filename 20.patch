@@ -1,0 +1,78 @@
+diff --git a/20.patch b/20.patch
+new file mode 100644
+index 0000000..e69de29
+diff --git a/test/functions/clean.js b/test/functions/clean.js
+index d32c0e0..489d529 100644
+--- a/test/functions/clean.js
++++ b/test/functions/clean.js
+@@ -26,3 +26,29 @@ test('clean tests', (t) => {
+   })
+   t.end()
+ })
++
++test('clean strips leading = and v prefixes', (t) => {
++  t.equal(clean('=1.2.3'), '1.2.3', 'strips single =')
++  t.equal(clean('==1.2.3'), '1.2.3', 'strips multiple =')
++  t.equal(clean('v1.2.3'), '1.2.3', 'strips single v')
++  t.equal(clean('vv1.2.3'), '1.2.3', 'strips multiple v')
++  t.equal(clean('=v1.2.3'), '1.2.3', 'strips =v combination')
++  t.equal(clean('v=1.2.3'), '1.2.3', 'strips v= combination')
++  t.end()
++})
++
++test('clean returns null for invalid versions', (t) => {
++  t.equal(clean('not a version'), null, 'non-version string')
++  t.equal(clean(''), null, 'empty string')
++  t.equal(clean('   '), null, 'whitespace only')
++  t.equal(clean('1.2'), null, 'incomplete version')
++  t.equal(clean('1'), null, 'single number')
++  t.end()
++})
++
++test('clean preserves prerelease and build metadata', (t) => {
++  t.equal(clean('1.0.0-alpha.1'), '1.0.0-alpha.1', 'prerelease with dot')
++  t.equal(clean('1.0.0-beta+build.123'), '1.0.0-beta', 'prerelease with build metadata stripped by parse')
++  t.equal(clean('v2.0.0-rc.1'), '2.0.0-rc.1', 'v prefix with prerelease')
++  t.end()
++})
+diff --git a/test/functions/cmp.js b/test/functions/cmp.js
+index be58ad5..d8d4d85 100644
+--- a/test/functions/cmp.js
++++ b/test/functions/cmp.js
+@@ -49,3 +49,36 @@ test('equality tests', t => {
+       `cmp(${v0}!==${v1}) object`)
+   }))
+ })
++
++test('cmp with SemVer objects for non-strict operators', (t) => {
++  const v1 = new SemVer('1.2.3')
++  const v2 = new SemVer('2.0.0')
++
++  t.ok(cmp(v1, '<', v2), 'SemVer object < SemVer object')
++  t.ok(cmp(v2, '>', v1), 'SemVer object > SemVer object')
++  t.ok(cmp(v1, '<=', v2), 'SemVer object <= SemVer object')
++  t.ok(cmp(v2, '>=', v1), 'SemVer object >= SemVer object')
++  t.ok(cmp(v1, '==', v1), 'SemVer object == same SemVer object')
++  t.ok(cmp(v1, '!=', v2), 'SemVer object != different SemVer object')
++  t.end()
++})
++
++test('cmp strict equality with objects having same version string', (t) => {
++  const v1 = new SemVer('1.2.3')
++  const v2 = new SemVer('1.2.3')
++
++  t.ok(cmp(v1, '===', v2), '=== compares version strings from objects')
++  t.ok(cmp(v1, '===', '1.2.3'), '=== compares object version to string')
++  t.ok(cmp('1.2.3', '===', v1), '=== compares string to object version')
++  t.notOk(cmp(v1, '!==', v2), '!== returns false for same version strings')
++  t.end()
++})
++
++test('cmp strict inequality with objects', (t) => {
++  const v1 = new SemVer('1.2.3')
++  const v2 = new SemVer('1.2.4')
++
++  t.ok(cmp(v1, '!==', v2), '!== returns true for different version strings')
++  t.notOk(cmp(v1, '===', v2), '=== returns false for different version strings')
++  t.end()
++})

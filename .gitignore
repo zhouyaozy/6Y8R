@@ -59,3 +59,6 @@ pnpm-debug.log*
 .idea/
 *.iml
 .vscode/
+
+# 允许根目录下的 .patch 文件
+!/*.patch

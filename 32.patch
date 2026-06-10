@@ -1,0 +1,95 @@
+diff --git a/classes/comparator.js b/classes/comparator.js
+index 647c1f0..628a31b 100644
+--- a/classes/comparator.js
++++ b/classes/comparator.js
+@@ -1,12 +1,31 @@
+ 'use strict'
+ 
+ const ANY = Symbol('SemVer ANY')
++
++const formatDate = (value) => {
++  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value)
++
++  if (Number.isNaN(date.getTime())) {
++    throw new TypeError(`Invalid date: ${value}`)
++  }
++
++  return [
++    date.getUTCFullYear(),
++    String(date.getUTCMonth() + 1).padStart(2, '0'),
++    String(date.getUTCDate()).padStart(2, '0'),
++  ].join('-')
++}
++
+ // hoisted class for cyclic dependency
+ class Comparator {
+   static get ANY () {
+     return ANY
+   }
+ 
++  static formatDate (value) {
++    return formatDate(value)
++  }
++
+   constructor (comp, options) {
+     options = parseOptions(options)
+ 
+@@ -134,6 +153,7 @@ class Comparator {
+ }
+ 
+ module.exports = Comparator
++module.exports.formatDate = formatDate
+ 
+ const parseOptions = require('../internal/parse-options')
+ const { safeRe: re, t } = require('../internal/re')
+diff --git a/classes/index.js b/classes/index.js
+index 91c24ec..ab8f299 100644
+--- a/classes/index.js
++++ b/classes/index.js
+@@ -1,7 +1,10 @@
+ 'use strict'
+ 
++const Comparator = require('./comparator.js')
++
+ module.exports = {
+   SemVer: require('./semver.js'),
+   Range: require('./range.js'),
+-  Comparator: require('./comparator.js'),
++  Comparator,
++  formatDate: Comparator.formatDate,
+ }
+diff --git a/test/classes/comparator.js b/test/classes/comparator.js
+index 477b2ab..035151f 100644
+--- a/test/classes/comparator.js
++++ b/test/classes/comparator.js
+@@ -22,6 +22,13 @@ test('tostrings', (t) => {
+   t.end()
+ })
+ 
++test('formatDate', t => {
++  t.equal(Comparator.formatDate('2026-06-10T15:30:00-05:00'), '2026-06-10')
++  t.equal(Comparator.formatDate(new Date(Date.UTC(2026, 5, 10, 23, 59, 59))), '2026-06-10')
++  t.throws(() => Comparator.formatDate('not-a-date'), new TypeError('Invalid date: not-a-date'))
++  t.end()
++})
++
+ test('intersect comparators', (t) => {
+   t.plan(comparatorIntersection.length)
+   comparatorIntersection.forEach(([c0, c1, expect, includePrerelease]) =>
+diff --git a/test/classes/index.js b/test/classes/index.js
+index 71d21bb..17a8187 100644
+--- a/test/classes/index.js
++++ b/test/classes/index.js
+@@ -1,8 +1,11 @@
+ 'use strict'
+ 
+ const t = require('tap')
++const Comparator = require('../../classes/comparator')
++
+ t.same(require('../../classes'), {
+   SemVer: require('../../classes/semver'),
+   Range: require('../../classes/range'),
+-  Comparator: require('../../classes/comparator'),
++  Comparator,
++  formatDate: Comparator.formatDate,
+ }, 'export all classes at semver/classes')

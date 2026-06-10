@@ -22,6 +22,13 @@ test('tostrings', (t) => {
   t.end()
 })
 
+test('formatDate', t => {
+  t.equal(Comparator.formatDate('2026-06-10T15:30:00-05:00'), '2026-06-10')
+  t.equal(Comparator.formatDate(new Date(Date.UTC(2026, 5, 10, 23, 59, 59))), '2026-06-10')
+  t.throws(() => Comparator.formatDate('not-a-date'), new TypeError('Invalid date: not-a-date'))
+  t.end()
+})
+
 test('intersect comparators', (t) => {
   t.plan(comparatorIntersection.length)
   comparatorIntersection.forEach(([c0, c1, expect, includePrerelease]) =>

@@ -1,10 +1,29 @@
 'use strict'
 
 const ANY = Symbol('SemVer ANY')
+
+const formatDate = (value) => {
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    throw new TypeError(`Invalid date: ${value}`)
+  }
+
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, '0'),
+    String(date.getUTCDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 // hoisted class for cyclic dependency
 class Comparator {
   static get ANY () {
     return ANY
+  }
+
+  static formatDate (value) {
+    return formatDate(value)
   }
 
   constructor (comp, options) {
@@ -134,6 +153,7 @@ class Comparator {
 }
 
 module.exports = Comparator
+module.exports.formatDate = formatDate
 
 const parseOptions = require('../internal/parse-options')
 const { safeRe: re, t } = require('../internal/re')

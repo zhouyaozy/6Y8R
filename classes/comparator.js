@@ -76,6 +76,26 @@ class Comparator {
     return cmp(version, this.operator, this.semver, this.options)
   }
 
+  static formatDate (date, pattern) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      throw new TypeError('a valid Date object is required')
+    }
+    pattern = pattern || 'YYYY-MM-DD HH:mm:ss'
+    const pad = (n) => String(n).padStart(2, '0')
+    const map = {
+      YYYY: date.getFullYear(),
+      MM: pad(date.getMonth() + 1),
+      DD: pad(date.getDate()),
+      HH: pad(date.getHours()),
+      mm: pad(date.getMinutes()),
+      ss: pad(date.getSeconds()),
+    }
+    return pattern.replace(
+      /YYYY|MM|DD|HH|mm|ss/g,
+      (token) => map[token]
+    )
+  }
+
   intersects (comp, options) {
     if (!(comp instanceof Comparator)) {
       throw new TypeError('a Comparator is required')

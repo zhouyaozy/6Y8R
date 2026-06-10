@@ -30,6 +30,7 @@ const cmp = require('./functions/cmp')
 const coerce = require('./functions/coerce')
 const truncate = require('./functions/truncate')
 const Comparator = require('./classes/comparator')
+const formatDate = Comparator.formatDate
 const Range = require('./classes/range')
 const satisfies = require('./functions/satisfies')
 const toComparators = require('./ranges/to-comparators')
@@ -69,6 +70,7 @@ module.exports = {
   coerce,
   truncate,
   Comparator,
+  formatDate,
   Range,
   satisfies,
   toComparators,

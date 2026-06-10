@@ -76,6 +76,42 @@ class Comparator {
     return cmp(version, this.operator, this.semver, this.options)
   }
 
+  static formatDate (date, format) {
+    if (date === null || date === undefined) {
+      throw new TypeError('date is required')
+    }
+
+    if (!(date instanceof Date)) {
+      date = new Date(date)
+    }
+
+    if (isNaN(date.getTime())) {
+      throw new TypeError('invalid date')
+    }
+
+    format = format || 'YYYY-MM-DD'
+
+    const pad = (n) => String(n).padStart(2, '0')
+
+    const tokens = {
+      YYYY: String(date.getFullYear()),
+      YY: String(date.getFullYear()).slice(-2),
+      MM: pad(date.getMonth() + 1),
+      DD: pad(date.getDate()),
+      HH: pad(date.getHours()),
+      mm: pad(date.getMinutes()),
+      ss: pad(date.getSeconds()),
+    }
+
+    let result = format
+    const keys = Object.keys(tokens).sort((a, b) => b.length - a.length)
+    for (const key of keys) {
+      result = result.replace(new RegExp(key, 'g'), tokens[key])
+    }
+
+    return result
+  }
+
   intersects (comp, options) {
     if (!(comp instanceof Comparator)) {
       throw new TypeError('a Comparator is required')

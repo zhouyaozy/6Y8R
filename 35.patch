@@ -1,0 +1,83 @@
+diff --git a/classes/comparator.js b/classes/comparator.js
+index 647c1f0..18ca00c 100644
+--- a/classes/comparator.js
++++ b/classes/comparator.js
+@@ -76,6 +76,42 @@ class Comparator {
+     return cmp(version, this.operator, this.semver, this.options)
+   }
+ 
++  static formatDate (date, format) {
++    if (date === null || date === undefined) {
++      throw new TypeError('date is required')
++    }
++
++    if (!(date instanceof Date)) {
++      date = new Date(date)
++    }
++
++    if (isNaN(date.getTime())) {
++      throw new TypeError('invalid date')
++    }
++
++    format = format || 'YYYY-MM-DD'
++
++    const pad = (n) => String(n).padStart(2, '0')
++
++    const tokens = {
++      YYYY: String(date.getFullYear()),
++      YY: String(date.getFullYear()).slice(-2),
++      MM: pad(date.getMonth() + 1),
++      DD: pad(date.getDate()),
++      HH: pad(date.getHours()),
++      mm: pad(date.getMinutes()),
++      ss: pad(date.getSeconds()),
++    }
++
++    let result = format
++    const keys = Object.keys(tokens).sort((a, b) => b.length - a.length)
++    for (const key of keys) {
++      result = result.replace(new RegExp(key, 'g'), tokens[key])
++    }
++
++    return result
++  }
++
+   intersects (comp, options) {
+     if (!(comp instanceof Comparator)) {
+       throw new TypeError('a Comparator is required')
+diff --git a/classes/index.js b/classes/index.js
+index 91c24ec..ab8f299 100644
+--- a/classes/index.js
++++ b/classes/index.js
+@@ -1,7 +1,10 @@
+ 'use strict'
+ 
++const Comparator = require('./comparator.js')
++
+ module.exports = {
+   SemVer: require('./semver.js'),
+   Range: require('./range.js'),
+-  Comparator: require('./comparator.js'),
++  Comparator,
++  formatDate: Comparator.formatDate,
+ }
+diff --git a/index.js b/index.js
+index bc1f608..2a1f4ce 100644
+--- a/index.js
++++ b/index.js
+@@ -30,6 +30,7 @@ const cmp = require('./functions/cmp')
+ const coerce = require('./functions/coerce')
+ const truncate = require('./functions/truncate')
+ const Comparator = require('./classes/comparator')
++const formatDate = Comparator.formatDate
+ const Range = require('./classes/range')
+ const satisfies = require('./functions/satisfies')
+ const toComparators = require('./ranges/to-comparators')
+@@ -69,6 +70,7 @@ module.exports = {
+   coerce,
+   truncate,
+   Comparator,
++  formatDate,
+   Range,
+   satisfies,
+   toComparators,

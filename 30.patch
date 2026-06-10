@@ -1,0 +1,43 @@
+diff --git a/internal/constants.js b/internal/constants.js
+index 6d1db91..b54f8d5 100644
+--- a/internal/constants.js
++++ b/internal/constants.js
+@@ -15,6 +15,11 @@ const MAX_SAFE_COMPONENT_LENGTH = 16
+ // the shortest version with a build 0.0.0+BUILD.
+ const MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6
+ 
++// Pagination display constants
++const DEFAULT_PAGE_SIZE = 10
++const MAX_PAGE_SIZE = 100
++const MIN_PAGE_SIZE = 1
++
+ const RELEASE_TYPES = [
+   'major',
+   'premajor',
+@@ -34,4 +39,7 @@ module.exports = {
+   SEMVER_SPEC_VERSION,
+   FLAG_INCLUDE_PRERELEASE: 0b001,
+   FLAG_LOOSE: 0b010,
++  DEFAULT_PAGE_SIZE,
++  MAX_PAGE_SIZE,
++  MIN_PAGE_SIZE,
+ }
+diff --git a/test/internal/constants.js b/test/internal/constants.js
+index 99cc449..f0ee247 100644
+--- a/test/internal/constants.js
++++ b/test/internal/constants.js
+@@ -9,4 +9,14 @@ t.match(constants, {
+   MAX_SAFE_INTEGER: Number,
+   RELEASE_TYPES: Array,
+   SEMVER_SPEC_VERSION: String,
++  DEFAULT_PAGE_SIZE: Number,
++  MAX_PAGE_SIZE: Number,
++  MIN_PAGE_SIZE: Number,
+ }, 'got appropriate data types exported')
++
++t.test('pagination constants have valid values', t => {
++  t.ok(constants.MIN_PAGE_SIZE >= 1, 'MIN_PAGE_SIZE should be at least 1')
++  t.ok(constants.DEFAULT_PAGE_SIZE >= constants.MIN_PAGE_SIZE, 'DEFAULT_PAGE_SIZE should be at least MIN_PAGE_SIZE')
++  t.ok(constants.MAX_PAGE_SIZE >= constants.DEFAULT_PAGE_SIZE, 'MAX_PAGE_SIZE should be at least DEFAULT_PAGE_SIZE')
++  t.end()
++})

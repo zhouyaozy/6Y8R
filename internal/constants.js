@@ -15,6 +15,11 @@ const MAX_SAFE_COMPONENT_LENGTH = 16
 // the shortest version with a build 0.0.0+BUILD.
 const MAX_SAFE_BUILD_LENGTH = MAX_LENGTH - 6
 
+// Pagination display constants
+const DEFAULT_PAGE_SIZE = 10
+const MAX_PAGE_SIZE = 100
+const MIN_PAGE_SIZE = 1
+
 const RELEASE_TYPES = [
   'major',
   'premajor',
@@ -34,4 +39,7 @@ module.exports = {
   SEMVER_SPEC_VERSION,
   FLAG_INCLUDE_PRERELEASE: 0b001,
   FLAG_LOOSE: 0b010,
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+  MIN_PAGE_SIZE,
 }

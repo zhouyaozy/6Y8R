@@ -1,7 +1,7 @@
 'use strict'
 
 const Range = require('../classes/range.js')
-const Comparator = require('../classes/comparator.js')
+const { Comparator } = require('../classes/comparator.js')
 const { ANY } = Comparator
 const satisfies = require('../functions/satisfies.js')
 const compare = require('../functions/compare.js')

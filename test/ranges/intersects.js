@@ -3,7 +3,7 @@
 const { test } = require('tap')
 const intersects = require('../../ranges/intersects')
 const Range = require('../../classes/range')
-const Comparator = require('../../classes/comparator')
+const { Comparator } = require('../../classes/comparator')
 const comparatorIntersection = require('../fixtures/comparator-intersection.js')
 const rangeIntersection = require('../fixtures/range-intersection.js')
 

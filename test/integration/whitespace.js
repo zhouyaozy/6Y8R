@@ -3,7 +3,7 @@
 const { test } = require('tap')
 const Range = require('../../classes/range')
 const SemVer = require('../../classes/semver')
-const Comparator = require('../../classes/comparator')
+const { Comparator } = require('../../classes/comparator')
 const validRange = require('../../ranges/valid')
 const minVersion = require('../../ranges/min-version')
 const minSatisfying = require('../../ranges/min-satisfying')

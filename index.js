@@ -29,7 +29,7 @@ const lte = require('./functions/lte')
 const cmp = require('./functions/cmp')
 const coerce = require('./functions/coerce')
 const truncate = require('./functions/truncate')
-const Comparator = require('./classes/comparator')
+const { Comparator, formatDate } = require('./classes/comparator')
 const Range = require('./classes/range')
 const satisfies = require('./functions/satisfies')
 const toComparators = require('./ranges/to-comparators')
@@ -68,6 +68,7 @@ module.exports = {
   cmp,
   coerce,
   truncate,
+  formatDate,
   Comparator,
   Range,
   satisfies,

@@ -221,7 +221,7 @@ const LRU = require('../internal/lrucache')
 const cache = new LRU()
 
 const parseOptions = require('../internal/parse-options')
-const Comparator = require('./comparator')
+const { Comparator } = require('./comparator')
 const debug = require('../internal/debug')
 const SemVer = require('./semver')
 const {

@@ -1,0 +1,169 @@
+diff --git a/classes/comparator.js b/classes/comparator.js
+index 647c1f0..08dc623 100644
+--- a/classes/comparator.js
++++ b/classes/comparator.js
+@@ -133,7 +133,35 @@ class Comparator {
+   }
+ }
+ 
+-module.exports = Comparator
++const formatDate = (date, fmt = 'YYYY-MM-DD') => {
++  if (date == null) {
++    return ''
++  }
++
++  const d = date instanceof Date ? date : new Date(date)
++
++  if (isNaN(d.getTime())) {
++    return ''
++  }
++
++  const pad = (n) => (n < 10 ? '0' + n : '' + n)
++
++  const tokens = {
++    YYYY: d.getFullYear(),
++    MM: pad(d.getMonth() + 1),
++    DD: pad(d.getDate()),
++    HH: pad(d.getHours()),
++    mm: pad(d.getMinutes()),
++    ss: pad(d.getSeconds()),
++  }
++
++  return fmt.replace(/YYYY|MM|DD|HH|mm|ss/g, (match) => tokens[match])
++}
++
++module.exports = {
++  Comparator,
++  formatDate,
++}
+ 
+ const parseOptions = require('../internal/parse-options')
+ const { safeRe: re, t } = require('../internal/re')
+diff --git a/classes/index.js b/classes/index.js
+index 91c24ec..8a51562 100644
+--- a/classes/index.js
++++ b/classes/index.js
+@@ -1,7 +1,10 @@
+ 'use strict'
+ 
++const comparator = require('./comparator.js')
++
+ module.exports = {
+   SemVer: require('./semver.js'),
+   Range: require('./range.js'),
+-  Comparator: require('./comparator.js'),
++  Comparator: comparator.Comparator,
++  formatDate: comparator.formatDate,
+ }
+diff --git a/classes/range.js b/classes/range.js
+index c2e605e..c2b25cc 100644
+--- a/classes/range.js
++++ b/classes/range.js
+@@ -221,7 +221,7 @@ const LRU = require('../internal/lrucache')
+ const cache = new LRU()
+ 
+ const parseOptions = require('../internal/parse-options')
+-const Comparator = require('./comparator')
++const { Comparator } = require('./comparator')
+ const debug = require('../internal/debug')
+ const SemVer = require('./semver')
+ const {
+diff --git a/index.js b/index.js
+index bc1f608..227973d 100644
+--- a/index.js
++++ b/index.js
+@@ -29,7 +29,7 @@ const lte = require('./functions/lte')
+ const cmp = require('./functions/cmp')
+ const coerce = require('./functions/coerce')
+ const truncate = require('./functions/truncate')
+-const Comparator = require('./classes/comparator')
++const { Comparator, formatDate } = require('./classes/comparator')
+ const Range = require('./classes/range')
+ const satisfies = require('./functions/satisfies')
+ const toComparators = require('./ranges/to-comparators')
+@@ -68,6 +68,7 @@ module.exports = {
+   cmp,
+   coerce,
+   truncate,
++  formatDate,
+   Comparator,
+   Range,
+   satisfies,
+diff --git a/ranges/outside.js b/ranges/outside.js
+index ca74421..417926e 100644
+--- a/ranges/outside.js
++++ b/ranges/outside.js
+@@ -1,7 +1,7 @@
+ 'use strict'
+ 
+ const SemVer = require('../classes/semver')
+-const Comparator = require('../classes/comparator')
++const { Comparator } = require('../classes/comparator')
+ const { ANY } = Comparator
+ const Range = require('../classes/range')
+ const satisfies = require('../functions/satisfies')
+diff --git a/ranges/subset.js b/ranges/subset.js
+index a949832..eeb3f6c 100644
+--- a/ranges/subset.js
++++ b/ranges/subset.js
+@@ -1,7 +1,7 @@
+ 'use strict'
+ 
+ const Range = require('../classes/range.js')
+-const Comparator = require('../classes/comparator.js')
++const { Comparator } = require('../classes/comparator.js')
+ const { ANY } = Comparator
+ const satisfies = require('../functions/satisfies.js')
+ const compare = require('../functions/compare.js')
+diff --git a/test/classes/comparator.js b/test/classes/comparator.js
+index 477b2ab..270096c 100644
+--- a/test/classes/comparator.js
++++ b/test/classes/comparator.js
+@@ -1,7 +1,7 @@
+ 'use strict'
+ 
+ const { test } = require('tap')
+-const Comparator = require('../../classes/comparator')
++const { Comparator } = require('../../classes/comparator')
+ const comparatorIntersection = require('../fixtures/comparator-intersection.js')
+ 
+ test('comparator testing', t => {
+diff --git a/test/classes/range.js b/test/classes/range.js
+index d012e50..28534aa 100644
+--- a/test/classes/range.js
++++ b/test/classes/range.js
+@@ -2,7 +2,7 @@
+ 
+ const { test } = require('tap')
+ const Range = require('../../classes/range')
+-const Comparator = require('../../classes/comparator')
++const { Comparator } = require('../../classes/comparator')
+ const rangeIntersection = require('../fixtures/range-intersection.js')
+ 
+ const rangeInclude = require('../fixtures/range-include.js')
+diff --git a/test/integration/whitespace.js b/test/integration/whitespace.js
+index 881edff..7978a82 100644
+--- a/test/integration/whitespace.js
++++ b/test/integration/whitespace.js
+@@ -3,7 +3,7 @@
+ const { test } = require('tap')
+ const Range = require('../../classes/range')
+ const SemVer = require('../../classes/semver')
+-const Comparator = require('../../classes/comparator')
++const { Comparator } = require('../../classes/comparator')
+ const validRange = require('../../ranges/valid')
+ const minVersion = require('../../ranges/min-version')
+ const minSatisfying = require('../../ranges/min-satisfying')
+diff --git a/test/ranges/intersects.js b/test/ranges/intersects.js
+index e3d9c88..fc2cb7c 100644
+--- a/test/ranges/intersects.js
++++ b/test/ranges/intersects.js
+@@ -3,7 +3,7 @@
+ const { test } = require('tap')
+ const intersects = require('../../ranges/intersects')
+ const Range = require('../../classes/range')
+-const Comparator = require('../../classes/comparator')
++const { Comparator } = require('../../classes/comparator')
+ const comparatorIntersection = require('../fixtures/comparator-intersection.js')
+ const rangeIntersection = require('../fixtures/range-intersection.js')
+ 

@@ -1,0 +1,68 @@
+diff --git a/classes/comparator.js b/classes/comparator.js
+index 647c1f0..6e823a3 100644
+--- a/classes/comparator.js
++++ b/classes/comparator.js
+@@ -131,6 +131,30 @@ class Comparator {
+     }
+     return false
+   }
++
++  /**
++   * 基础的日期格式化工具函数
++   * @param {Date|string|number} date - 日期对象或可以转换为日期的值
++   * @param {string} [format='YYYY-MM-DD'] - 格式化模板
++   * @returns {string} 格式化后的日期字符串
++   */
++  static formatDate (date, format = 'YYYY-MM-DD') {
++    const d = new Date(date)
++    if (isNaN(d.getTime())) {
++      return 'Invalid Date'
++    }
++
++    const map = {
++      YYYY: d.getFullYear(),
++      MM: String(d.getMonth() + 1).padStart(2, '0'),
++      DD: String(d.getDate()).padStart(2, '0'),
++      HH: String(d.getHours()).padStart(2, '0'),
++      mm: String(d.getMinutes()).padStart(2, '0'),
++      ss: String(d.getSeconds()).padStart(2, '0'),
++    }
++
++    return format.replace(/YYYY|MM|DD|HH|mm|ss/g, match => map[match])
++  }
+ }
+ 
+ module.exports = Comparator
+diff --git a/classes/index.js b/classes/index.js
+index 91c24ec..ab8f299 100644
+--- a/classes/index.js
++++ b/classes/index.js
+@@ -1,7 +1,10 @@
+ 'use strict'
+ 
++const Comparator = require('./comparator.js')
++
+ module.exports = {
+   SemVer: require('./semver.js'),
+   Range: require('./range.js'),
+-  Comparator: require('./comparator.js'),
++  Comparator,
++  formatDate: Comparator.formatDate,
+ }
+diff --git a/test/classes/comparator.js b/test/classes/comparator.js
+index 477b2ab..b10f96b 100644
+--- a/test/classes/comparator.js
++++ b/test/classes/comparator.js
+@@ -63,3 +63,12 @@ test('= is ignored', t => {
+   t.match(new Comparator('=1.2.3'), new Comparator('1.2.3'))
+   t.end()
+ })
++
++test('formatDate utility', t => {
++  const d = new Date(2023, 4, 15, 14, 30, 45) // May 15, 2023 14:30:45 Local Time
++  t.equal(Comparator.formatDate(d), '2023-05-15')
++  t.equal(Comparator.formatDate(d, 'YYYY/MM/DD HH:mm:ss'), '2023/05/15 14:30:45')
++  t.equal(Comparator.formatDate('invalid'), 'Invalid Date')
++  t.equal(Comparator.formatDate(d.getTime(), 'YYYY-MM-DD'), '2023-05-15')
++  t.end()
++})

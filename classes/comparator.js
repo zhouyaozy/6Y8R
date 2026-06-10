@@ -131,6 +131,30 @@ class Comparator {
     }
     return false
   }
+
+  /**
+   * 基础的日期格式化工具函数
+   * @param {Date|string|number} date - 日期对象或可以转换为日期的值
+   * @param {string} [format='YYYY-MM-DD'] - 格式化模板
+   * @returns {string} 格式化后的日期字符串
+   */
+  static formatDate (date, format = 'YYYY-MM-DD') {
+    const d = new Date(date)
+    if (isNaN(d.getTime())) {
+      return 'Invalid Date'
+    }
+
+    const map = {
+      YYYY: d.getFullYear(),
+      MM: String(d.getMonth() + 1).padStart(2, '0'),
+      DD: String(d.getDate()).padStart(2, '0'),
+      HH: String(d.getHours()).padStart(2, '0'),
+      mm: String(d.getMinutes()).padStart(2, '0'),
+      ss: String(d.getSeconds()).padStart(2, '0'),
+    }
+
+    return format.replace(/YYYY|MM|DD|HH|mm|ss/g, match => map[match])
+  }
 }
 
 module.exports = Comparator

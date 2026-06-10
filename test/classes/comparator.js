@@ -63,3 +63,12 @@ test('= is ignored', t => {
   t.match(new Comparator('=1.2.3'), new Comparator('1.2.3'))
   t.end()
 })
+
+test('formatDate utility', t => {
+  const d = new Date(2023, 4, 15, 14, 30, 45) // May 15, 2023 14:30:45 Local Time
+  t.equal(Comparator.formatDate(d), '2023-05-15')
+  t.equal(Comparator.formatDate(d, 'YYYY/MM/DD HH:mm:ss'), '2023/05/15 14:30:45')
+  t.equal(Comparator.formatDate('invalid'), 'Invalid Date')
+  t.equal(Comparator.formatDate(d.getTime(), 'YYYY-MM-DD'), '2023-05-15')
+  t.end()
+})

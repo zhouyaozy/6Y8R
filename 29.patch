@@ -1,0 +1,114 @@
+diff --git a/internal/constants.js b/internal/constants.js
+index 6d1db91..15b1f05 100644
+--- a/internal/constants.js
++++ b/internal/constants.js
+@@ -25,6 +25,20 @@ const RELEASE_TYPES = [
+   'prerelease',
+ ]
+ 
++const DEFAULT_PAGE_SIZE = 20
++
++const debug = require('./debug')
++
++const paginate = (items, page = 1, pageSize = DEFAULT_PAGE_SIZE) => {
++  const total = items.length
++  const totalPages = Math.max(1, Math.ceil(total / pageSize))
++  const safePage = Math.min(Math.max(1, page), totalPages)
++  const start = (safePage - 1) * pageSize
++  const pagedItems = items.slice(start, start + pageSize)
++  debug('paginate', { total, page: safePage, pageSize, totalPages, itemCount: pagedItems.length })
++  return { items: pagedItems, total, page: safePage, pageSize, totalPages }
++}
++
+ module.exports = {
+   MAX_LENGTH,
+   MAX_SAFE_COMPONENT_LENGTH,
+@@ -34,4 +48,6 @@ module.exports = {
+   SEMVER_SPEC_VERSION,
+   FLAG_INCLUDE_PRERELEASE: 0b001,
+   FLAG_LOOSE: 0b010,
++  DEFAULT_PAGE_SIZE,
++  paginate,
+ }
+diff --git a/test/internal/constants.js b/test/internal/constants.js
+index 99cc449..80fa3d6 100644
+--- a/test/internal/constants.js
++++ b/test/internal/constants.js
+@@ -9,4 +9,77 @@ t.match(constants, {
+   MAX_SAFE_INTEGER: Number,
+   RELEASE_TYPES: Array,
+   SEMVER_SPEC_VERSION: String,
++  DEFAULT_PAGE_SIZE: Number,
++  paginate: Function,
+ }, 'got appropriate data types exported')
++
++t.test('paginate', t => {
++  const { paginate, DEFAULT_PAGE_SIZE } = constants
++  const versions = Array.from({ length: 50 }, (_, i) => `${i + 1}.0.0`)
++
++  t.test('default page size', t => {
++    const result = paginate(versions)
++    t.equal(result.page, 1)
++    t.equal(result.pageSize, DEFAULT_PAGE_SIZE)
++    t.equal(result.total, 50)
++    t.equal(result.totalPages, 3)
++    t.equal(result.items.length, DEFAULT_PAGE_SIZE)
++    t.equal(result.items[0], '1.0.0')
++    t.equal(result.items[19], '20.0.0')
++    t.end()
++  })
++
++  t.test('specific page', t => {
++    const result = paginate(versions, 2)
++    t.equal(result.page, 2)
++    t.equal(result.items.length, DEFAULT_PAGE_SIZE)
++    t.equal(result.items[0], '21.0.0')
++    t.end()
++  })
++
++  t.test('last partial page', t => {
++    const result = paginate(versions, 3)
++    t.equal(result.page, 3)
++    t.equal(result.items.length, 10)
++    t.equal(result.items[0], '41.0.0')
++    t.equal(result.items[9], '50.0.0')
++    t.end()
++  })
++
++  t.test('custom page size', t => {
++    const result = paginate(versions, 1, 5)
++    t.equal(result.pageSize, 5)
++    t.equal(result.items.length, 5)
++    t.equal(result.totalPages, 10)
++    t.end()
++  })
++
++  t.test('empty array', t => {
++    const result = paginate([])
++    t.equal(result.total, 0)
++    t.equal(result.totalPages, 1)
++    t.equal(result.items.length, 0)
++    t.end()
++  })
++
++  t.test('page out of range clamps to last page', t => {
++    const result = paginate(versions, 999)
++    t.equal(result.page, 3)
++    t.equal(result.items.length, 10)
++    t.end()
++  })
++
++  t.test('page zero clamps to first page', t => {
++    const result = paginate(versions, 0)
++    t.equal(result.page, 1)
++    t.end()
++  })
++
++  t.test('negative page clamps to first page', t => {
++    const result = paginate(versions, -5)
++    t.equal(result.page, 1)
++    t.end()
++  })
++
++  t.end()
++})

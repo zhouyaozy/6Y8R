@@ -25,6 +25,20 @@ const RELEASE_TYPES = [
   'prerelease',
 ]
 
+const DEFAULT_PAGE_SIZE = 20
+
+const debug = require('./debug')
+
+const paginate = (items, page = 1, pageSize = DEFAULT_PAGE_SIZE) => {
+  const total = items.length
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const safePage = Math.min(Math.max(1, page), totalPages)
+  const start = (safePage - 1) * pageSize
+  const pagedItems = items.slice(start, start + pageSize)
+  debug('paginate', { total, page: safePage, pageSize, totalPages, itemCount: pagedItems.length })
+  return { items: pagedItems, total, page: safePage, pageSize, totalPages }
+}
+
 module.exports = {
   MAX_LENGTH,
   MAX_SAFE_COMPONENT_LENGTH,
@@ -34,4 +48,6 @@ module.exports = {
   SEMVER_SPEC_VERSION,
   FLAG_INCLUDE_PRERELEASE: 0b001,
   FLAG_LOOSE: 0b010,
+  DEFAULT_PAGE_SIZE,
+  paginate,
 }

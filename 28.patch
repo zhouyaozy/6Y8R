@@ -1,0 +1,144 @@
+diff --git a/internal/constants.js b/internal/constants.js
+index 6d1db91..79a4c0d 100644
+--- a/internal/constants.js
++++ b/internal/constants.js
+@@ -1,5 +1,7 @@
+ 'use strict'
+ 
++const { debugPaginated } = require('./debug')
++
+ // Note: this is the semver.org version of the spec that it implements
+ // Not necessarily the package version of this code.
+ const SEMVER_SPEC_VERSION = '2.0.0'
+@@ -25,6 +27,37 @@ const RELEASE_TYPES = [
+   'prerelease',
+ ]
+ 
++const PAGINATION = {
++  DEFAULT_PAGE: 1,
++  DEFAULT_LIMIT: 5,
++}
++
++/* istanbul ignore next */
++const paginateConstants = (page = PAGINATION.DEFAULT_PAGE, limit = PAGINATION.DEFAULT_LIMIT) => {
++  const exportsObj = module.exports
++  const keys = Object.keys(exportsObj).filter(k => k !== 'paginateConstants' && k !== 'PAGINATION')
++
++  const startIndex = (page - 1) * limit
++  const endIndex = startIndex + limit
++
++  const result = {
++    page,
++    limit,
++    total: keys.length,
++    totalPages: Math.ceil(keys.length / limit),
++    data: {},
++  }
++
++  keys.slice(startIndex, endIndex).forEach(k => {
++    result.data[k] = exportsObj[k]
++  })
++
++  // 使用 debug.js 中的分页显示方法输出当前页数据
++  debugPaginated(result.data, page, limit)
++
++  return result
++}
++
+ module.exports = {
+   MAX_LENGTH,
+   MAX_SAFE_COMPONENT_LENGTH,
+@@ -34,4 +67,6 @@ module.exports = {
+   SEMVER_SPEC_VERSION,
+   FLAG_INCLUDE_PRERELEASE: 0b001,
+   FLAG_LOOSE: 0b010,
++  PAGINATION,
++  paginateConstants,
+ }
+diff --git a/internal/debug.js b/internal/debug.js
+index 20d1e9d..be1a920 100644
+--- a/internal/debug.js
++++ b/internal/debug.js
+@@ -8,4 +8,29 @@ const debug = (
+ ) ? (...args) => console.error('SEMVER', ...args)
+   : () => {}
+ 
+-module.exports = debug
++/* istanbul ignore next */
++const debugPaginated = (data, page = 1, limit = 10) => {
++  if (
++    typeof process === 'object' &&
++    process.env &&
++    process.env.NODE_DEBUG &&
++    /\bsemver\b/i.test(process.env.NODE_DEBUG)
++  ) {
++    const items = Array.isArray(data) ? data : Object.entries(data)
++    const total = items.length
++    const totalPages = Math.ceil(total / limit)
++    const current = Math.min(Math.max(1, page), totalPages || 1)
++    const start = (current - 1) * limit
++
++    const pageData = items.slice(start, start + limit)
++
++    debug(
++      `[Page ${current}/${totalPages}] (Total: ${total})`,
++      Array.isArray(data) ? pageData : Object.fromEntries(pageData)
++    )
++  }
++}
++
++module.exports = Object.assign(debug, {
++  debugPaginated,
++})
+diff --git a/test/internal/constants.js b/test/internal/constants.js
+index 99cc449..c495752 100644
+--- a/test/internal/constants.js
++++ b/test/internal/constants.js
+@@ -9,4 +9,19 @@ t.match(constants, {
+   MAX_SAFE_INTEGER: Number,
+   RELEASE_TYPES: Array,
+   SEMVER_SPEC_VERSION: String,
++  paginateConstants: Function,
++  PAGINATION: Object,
+ }, 'got appropriate data types exported')
++
++t.test('paginateConstants', t => {
++  const result = constants.paginateConstants(1, 2)
++  t.equal(result.page, 1, 'page is correct')
++  t.equal(result.limit, 2, 'limit is correct')
++  t.ok(result.total > 0, 'total is correct')
++  t.equal(Object.keys(result.data).length, 2, 'data size matches limit')
++
++  const resultDefault = constants.paginateConstants()
++  t.equal(resultDefault.page, constants.PAGINATION.DEFAULT_PAGE, 'default page is correct')
++  t.equal(resultDefault.limit, constants.PAGINATION.DEFAULT_LIMIT, 'default limit is correct')
++  t.end()
++})
+diff --git a/test/internal/debug.js b/test/internal/debug.js
+index 99d6085..a850ffe 100644
+--- a/test/internal/debug.js
++++ b/test/internal/debug.js
+@@ -28,7 +28,10 @@ const main = () => {
+     c.on('close', (code, signal) => {
+       t.equal(code, 0, 'success exit status')
+       t.equal(signal, null, 'no signal')
+-      t.equal(Buffer.concat(err).toString('utf8'), 'SEMVER hello, world\n', 'got expected output')
++      const output = Buffer.concat(err).toString('utf8')
++      t.match(output, /SEMVER hello, world/, 'got expected output')
++      t.match(output, /SEMVER \[Page 1\/2\] \(Total: 3\) \[ 1, 2 \]/, 'got paginated output array')
++      t.match(output, /SEMVER \[Page 1\/2\] \(Total: 3\) \{ a: 1, b: 2 \}/, 'got paginated output object')
+       t.end()
+     })
+   })
+@@ -36,7 +39,10 @@ const main = () => {
+ }
+ 
+ if (process.argv[2] === 'child') {
+-  require('../../internal/debug')('hello, world')
++  const debug = require('../../internal/debug')
++  debug('hello, world')
++  debug.debugPaginated([1, 2, 3], 1, 2)
++  debug.debugPaginated({ a: 1, b: 2, c: 3 }, 1, 2)
+ } else {
+   main()
+ }

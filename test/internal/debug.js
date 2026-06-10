@@ -28,7 +28,10 @@ const main = () => {
     c.on('close', (code, signal) => {
       t.equal(code, 0, 'success exit status')
       t.equal(signal, null, 'no signal')
-      t.equal(Buffer.concat(err).toString('utf8'), 'SEMVER hello, world\n', 'got expected output')
+      const output = Buffer.concat(err).toString('utf8')
+      t.match(output, /SEMVER hello, world/, 'got expected output')
+      t.match(output, /SEMVER \[Page 1\/2\] \(Total: 3\) \[ 1, 2 \]/, 'got paginated output array')
+      t.match(output, /SEMVER \[Page 1\/2\] \(Total: 3\) \{ a: 1, b: 2 \}/, 'got paginated output object')
       t.end()
     })
   })
@@ -36,7 +39,10 @@ const main = () => {
 }
 
 if (process.argv[2] === 'child') {
-  require('../../internal/debug')('hello, world')
+  const debug = require('../../internal/debug')
+  debug('hello, world')
+  debug.debugPaginated([1, 2, 3], 1, 2)
+  debug.debugPaginated({ a: 1, b: 2, c: 3 }, 1, 2)
 } else {
   main()
 }

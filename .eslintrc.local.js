@@ -15,5 +15,19 @@ module.exports = {
         strict: ['error', 'global'],
       },
     },
+    {
+      files: ['benchmarks/**'],
+      rules: {
+        'import/no-extraneous-dependencies': [
+          'error',
+          {
+            devDependencies: true,
+          },
+        ],
+        'import/no-nodejs-modules': ['off'],
+        'no-console': ['off'],
+        strict: ['error', 'global'],
+      },
+    },
   ],
 }

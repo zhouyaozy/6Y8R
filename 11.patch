@@ -1,0 +1,24 @@
+diff --git a/.eslintrc.local.js b/.eslintrc.local.js
+index 7f62918..a561fb1 100644
+--- a/.eslintrc.local.js
++++ b/.eslintrc.local.js
+@@ -15,5 +15,19 @@ module.exports = {
+         strict: ['error', 'global'],
+       },
+     },
++    {
++      files: ['benchmarks/**'],
++      rules: {
++        'import/no-extraneous-dependencies': [
++          'error',
++          {
++            devDependencies: true,
++          },
++        ],
++        'import/no-nodejs-modules': ['off'],
++        'no-console': ['off'],
++        strict: ['error', 'global'],
++      },
++    },
+   ],
+ }

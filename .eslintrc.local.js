@@ -15,5 +15,11 @@ module.exports = {
         strict: ['error', 'global'],
       },
     },
+    {
+      files: ['benchmarks/**'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
   ],
 }

@@ -15,6 +15,6 @@ for (const [v0, v1] of comparisons) {
 
 suite
   .on('cycle', function (event) {
-    console.log(String(event.target))
+    process.stdout.write(`${String(event.target)}\n`)
   })
   .run({ async: false })

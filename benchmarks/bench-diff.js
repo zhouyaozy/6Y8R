@@ -18,6 +18,6 @@ for (const [v1, v2] of cases) {
 
 suite
   .on('cycle', function (event) {
-    console.log(String(event.target))
+    process.stdout.write(`${String(event.target)}\n`)
   })
   .run({ async: false })
